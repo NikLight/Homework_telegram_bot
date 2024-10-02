@@ -51,10 +51,11 @@ def check_tokens():
     :raises ValueError: если одна из переменных окружения отсутствует.
     """
     try:
-        if not (PRACTICUM_TOKEN and
-                TELEGRAM_TOKEN and TELEGRAM_CHAT_ID):
+        if not (PRACTICUM_TOKEN
+                and TELEGRAM_TOKEN
+                and TELEGRAM_CHAT_ID):
             logger.critical(
-                f'Проверьте правильность заполнения токена')
+                'Проверьте правильность заполнения токена')
             raise ValueError(
                 'Проверьте правильность заполнения токена')
 
@@ -89,7 +90,7 @@ def get_api_answer(timestamp: int):
     if not isinstance(timestamp, int):
         logger.error(
             f'Время указано в формате {timestamp}, '
-                     f'а должно быть int')
+            'а должно быть int')
         raise TypeError(
             'Время должно быть в формате Unix Time')
 
@@ -104,8 +105,8 @@ def get_api_answer(timestamp: int):
             logger.error(
                 'Ендпоинт недоступен')
             raise ValueError(
-                'Проверьте правильность заполнения токена'
-                             ' или состояние сервера')
+                'Проверьте правильность заполнения токена '
+                'или состояние сервера')
 
     except requests.RequestException as Error:
         logger.error(f'Непредвиденная ошибка {Error}')
@@ -146,7 +147,7 @@ def check_response(response):
         logger.debug(
             'Ключ Homeworks должен содержать список list')
         raise TypeError(
-            f'Ключ Homeworks должен содержать список list')
+            'Ключ Homeworks должен содержать список list')
 
     if not response['homeworks']:
         logger.debug(
