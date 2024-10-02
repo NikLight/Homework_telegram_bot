@@ -7,7 +7,7 @@ import os
 import logging
 
 from dotenv import load_dotenv
-from telebot import TeleBot, logger
+from telebot import TeleBot
 
 load_dotenv()
 
