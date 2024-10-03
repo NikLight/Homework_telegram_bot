@@ -52,8 +52,15 @@ class APIRequestStatusError(RuntimeError):
         message (str): Описание ошибки.
         error_code (int, optional):
         Код ошибки (по умолчанию None).
-        """
+    """
+
     def __init__(self, message, error_code=None):
+        """
+        Инициализация APIRequestStatusError.
+
+        :param message: Сообщение об ошибке.
+        :param error_code: Код ошибки (необязательно).
+        """
         self.message = message
         self.error_code = error_code
         super().__init__(f'{message} (Код ошибки: {error_code}')
@@ -71,7 +78,6 @@ def check_tokens():
     :raises ValueError: если отсутствует хотя бы одна из
     переменных окружения.
     """
-
     if not PRACTICUM_TOKEN:
         raise ValueError('Отсутствует токен PRACTICUM_TOKEN')
 
@@ -95,7 +101,6 @@ def get_api_answer(timestamp: int):
     :raises ValueError: если API недоступен
     или произошла ошибка запроса.
     """
-
     if not isinstance(timestamp, int):
         raise TypeError(
             f'Время: {timestamp} - должно быть в формате Unix Time')
@@ -130,7 +135,6 @@ def check_response(response):
         'homeworks' не является списком.
     :raises KeyError: если отсутствует ключ 'homeworks' в response.
     """
-
     if not isinstance(response, dict):
         raise TypeError(
             f'Response от API должен быть словарем,'
@@ -221,7 +225,6 @@ def main():
     и отправка уведомлений в Telegram.
     5. Бесконечный цикл с интервалом ожидания RETRY_PERIOD.
     """
-
     bot = TeleBot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time())
     last_message = None
