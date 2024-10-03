@@ -42,6 +42,17 @@ logger.addHandler(stream_handler)
 
 
 class APIRequestStatusError(RuntimeError):
+    """
+    Исключение для обработки ошибок запросов к API.
+
+    Attributes:
+        message (str): Описание ошибки.
+        error_code (int, optional): Код ошибки от API.
+    Args:
+        message (str): Описание ошибки.
+        error_code (int, optional):
+        Код ошибки (по умолчанию None).
+        """
     def __init__(self, message, error_code=None):
         self.message = message
         self.error_code = error_code
@@ -51,7 +62,6 @@ class APIRequestStatusError(RuntimeError):
 def check_tokens():
     """
     Проверяет, что все необходимые токены окружения присутствуют.
-
     Убедитесь, что переменные PRACTICUM_TOKEN,
     TELEGRAM_TOKEN и TELEGRAM_CHAT_ID
     установлены в окружении. В случае отсутствия хотя бы одной
@@ -75,7 +85,6 @@ def check_tokens():
 def get_api_answer(timestamp: int):
     """
     Получает ответ от API сервиса Практикум.
-
     Отправляет GET-запрос к API с заданной временной меткой,
     чтобы получить информацию о статусах домашних работ.
     При успешном запросе возвращает ответ в формате JSON.
@@ -112,7 +121,6 @@ def get_api_answer(timestamp: int):
 def check_response(response):
     """
     Проверяет правильность структуры ответа API.
-
     Убедитесь, что ответ API является корректным словарём и содержит
     необходимые ключи, включая список под ключом 'homeworks'.
 
@@ -143,7 +151,6 @@ def check_response(response):
 def parse_status(homework):
     """
     Извлекает статус конкретной домашней работы из ответа API.
-
     Получает элемент из списка домашних работ, извлекает
     название и статус работы, сопоставляет статус с вердиктом
     из словаря HOMEWORK_VERDICTS и формирует строку для отправки
@@ -185,7 +192,6 @@ def parse_status(homework):
 def send_message(bot, message):
     """
     Отправляет сообщение в Telegram-чат.
-
     Использует экземпляр класса TeleBot для отправки
     сообщения с заданным текстом в чат, определённый
     переменной окружения TELEGRAM_CHAT_ID.
@@ -203,10 +209,10 @@ def send_message(bot, message):
         raise requests.exceptions.RequestException(
             f'Ошибка {Erors} при отправке сообщения')
 
+
 def main():
     """
     Основной алгоритм работы бота.
-
     В этой функции реализована логика работы программы:
     1. Проверка наличия токенов.
     2. Запрос к API.
