@@ -53,7 +53,7 @@ class APIRequestStatusError(RuntimeError):
         super().__init__(f'{message} (Код ошибки: {error_code}')
 
 
-logger = logging.getLogger(__name__) #убедили :)
+logger = logging.getLogger(__name__)
 
 
 def setup_logger():
@@ -82,7 +82,6 @@ def check_tokens():
     :raises ValueError: если отсутствует хотя бы одна из
     переменных окружения.
     """
-
     missing_tokens = []
 
     if not PRACTICUM_TOKEN:
@@ -98,6 +97,7 @@ def check_tokens():
         raise ValueError(f'Отсутствуют токены: {", ".join(missing_tokens)}')
 
     logger.info('Все токены доступны')
+
 
 def get_api_answer(timestamp: int):
     """
