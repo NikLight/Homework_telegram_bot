@@ -27,19 +27,6 @@ HOMEWORK_VERDICTS = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
-# я бы с радостью убрал бы в main() но тогда меня тесты не пускают
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter(
-    '%(asctime)s - %(name)s - %(levelname)s -%(message)s')
-file_handler = logging.FileHandler(
-    'program.log', mode='w')
-file_handler.setFormatter(formatter)
-stream_handler = StreamHandler()
-stream_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
-logger.addHandler(stream_handler)
-
 
 class APIRequestStatusError(RuntimeError):
     """
@@ -66,6 +53,23 @@ class APIRequestStatusError(RuntimeError):
         super().__init__(f'{message} (Код ошибки: {error_code}')
 
 
+logger = logging.getLogger(__name__) #убедили :)
+
+
+def setup_logger():
+    """Настраивает логирование."""
+    logger.setLevel(logging.DEBUG)
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s -%(message)s')
+    file_handler = logging.FileHandler(
+        'program.log', mode='w')
+    file_handler.setFormatter(formatter)
+    stream_handler = StreamHandler()
+    stream_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    logger.addHandler(stream_handler)
+
+
 def check_tokens():
     """
     Проверяет, что все необходимые токены окружения присутствуют.
@@ -78,15 +82,22 @@ def check_tokens():
     :raises ValueError: если отсутствует хотя бы одна из
     переменных окружения.
     """
+
+    missing_tokens = []
+
     if not PRACTICUM_TOKEN:
-        raise ValueError('Отсутствует токен PRACTICUM_TOKEN')
+        missing_tokens.append('PRACTICUM_TOKEN')
 
     if not TELEGRAM_TOKEN:
-        raise ValueError('Отсутствует токен TELEGRAM_TOKEN')
+        missing_tokens.append('TELEGRAM_TOKEN')
 
     if not TELEGRAM_CHAT_ID:
-        raise ValueError('Отсутствует токен TELEGRAM_CHAT_ID')
+        missing_tokens.append('TELEGRAM_CHAT_ID')
 
+    if missing_tokens:
+        raise ValueError(f'Отсутствуют токены: {", ".join(missing_tokens)}')
+
+    logger.info('Все токены доступны')
 
 def get_api_answer(timestamp: int):
     """
@@ -113,12 +124,14 @@ def get_api_answer(timestamp: int):
             params=payload)
 
     except requests.RequestException as Error:
-        raise ValueError(f'Непредвиденная ошибка {Error}')
+        raise ValueError(f'При запросе к API возникла ошибка: {Error}')
 
     if api_answer.status_code != HTTPStatus.OK:
         raise APIRequestStatusError(
             f'Ответ API сервера != {HTTPStatus.OK}',
             error_code=api_answer.status_code)
+
+    logger.debug(f'Ответ API получен: {api_answer.json()}')
 
     return api_answer.json()
 
@@ -148,6 +161,8 @@ def check_response(response):
         raise TypeError(
             f'Ключ Homeworks должен содержать список list, '
             f'а содержит {type(response["homeworks"])}')
+
+    logger.debug(f'Ответ от API содержит {response["homeworks"]}')
 
     return response['homeworks']
 
@@ -179,7 +194,7 @@ def parse_status(homework):
         status = homework['status']
     except KeyError:
         raise KeyError(
-            'Статус домашней работы отсутствует')
+            'Отсутствует ключ status')
 
     if status not in valid_statuses:
         raise ValueError(
@@ -210,8 +225,16 @@ def send_message(bot, message):
         logger.debug(
             f'Сообщение {message} успешно отправлено')
     except requests.exceptions.RequestException as Erors:
-        raise requests.exceptions.RequestException(
+        logger.error(
             f'Ошибка {Erors} при отправке сообщения')
+
+    except Exception as error:
+        logger.error(
+            f'Неизвестная ошибка при отправке сообщения: {error}'
+        )
+
+    logger.debug(
+        f'Сообщение {message} успешно отправлено')
 
 
 def main():
@@ -228,27 +251,19 @@ def main():
     bot = TeleBot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time())
     last_message = None
+    last_error_message = None
 
     logger.info('Запускаем бота...вжух#')
 
     while True:
         try:
-
-            try:
-                check_tokens()
-                logger.info('Все токены доступны')
-            except ValueError as error:
-                logger.critical(error)
-                sys.exit()
-                # Завершаем программу, если токены отсутствуют
+            check_tokens()
 
             response_api = get_api_answer(timestamp)
-            logger.debug(f'Ответ API получен: {response_api}')
 
             timestamp = response_api.get('current_date', timestamp)
 
             homeworks = check_response(response_api)
-            logger.debug(f'Ответ от API содержит {homeworks}')
 
             if not homeworks:
                 logger.debug(
@@ -260,19 +275,28 @@ def main():
 
                     if message != last_message:
                         send_message(bot=bot, message=message)
-                        logger.debug(
-                            f'Сообщение {message} успешно отправлено')
                         last_message = message
                     else:
                         logger.debug(
                             'Сообщение совпадает с предыдущим отправленным')
 
+        except ValueError as error:
+            logger.critical(error)
+            sys.exit()
+            # Завершаем программу, если токены отсутствуют
+
         except Exception as error:
             logger.error(
                 f'Ошибка в работе программы: {error}')
+
+            error_message = str(error)
+            if error_message != last_error_message:
+                send_message(bot=bot, message=error)
+                last_error_message = error_message
 
         time.sleep(RETRY_PERIOD)
 
 
 if __name__ == '__main__':
+    setup_logger()
     main()
